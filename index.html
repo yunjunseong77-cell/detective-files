@@ -203,10 +203,28 @@ tr.me td{background:rgba(192,57,43,.04)}
   .admin-right{display:none}
   .cases-grid{padding:14px 16px;grid-template-columns:1fr}
   .topbar{padding:0 14px}
+  .mobile-hints{display:flex !important}
+  .game-header{padding:10px 14px}
+  .situation{font-size:13px}
 }
+.mobile-hints{display:none;gap:6px;padding:8px 14px;border-top:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;background:var(--surface)}
+.mobile-hint-btn{flex:1;min-width:80px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .2s}
+.mobile-hint-btn:hover:not(.used){border-color:#9b59b6;color:#9b59b6}
+.mobile-hint-btn.used{opacity:.3;cursor:not-allowed}
+
+/* RESUME BUTTON */
+.resume-bar{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200}
+.resume-btn{background:var(--red);color:#fff;border:none;border-radius:30px;padding:12px 24px;font-family:var(--mono);font-size:12px;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 20px rgba(192,57,43,.4);display:flex;align-items:center;gap:8px;transition:all .2s}
+.resume-btn:hover{background:var(--red2);transform:translateY(-2px);box-shadow:0 6px 24px rgba(192,57,43,.5)}
 </style>
 </head>
 <body>
+
+<div class="resume-bar" id="resume-bar">
+  <button class="resume-btn" onclick="resumeGame()">
+    <i class="ti ti-player-play"></i> 게임 이어하기
+  </button>
+</div>
 
 <div class="topbar">
   <div class="logo"><div class="logo-dot"></div>Detective Files</div>
@@ -276,6 +294,12 @@ tr.me td{background:rgba(192,57,43,.04)}
       <div class="chat-in">
         <input class="q-inp" id="q-inp" placeholder="예/아니오로 답할 수 있는 질문을 입력하세요..." maxlength="100"/>
         <button class="btn btn-primary" id="send-btn" onclick="sendQ()" style="padding:10px 16px">전송 <i class="ti ti-send"></i></button>
+      </div>
+      <!-- 모바일 힌트 버튼 -->
+      <div class="mobile-hints" id="mobile-hints">
+        <button class="mobile-hint-btn" id="mhb1" onclick="useHint(0)"><i class="ti ti-bulb" style="font-size:12px"></i>힌트 1</button>
+        <button class="mobile-hint-btn" id="mhb2" onclick="useHint(1)"><i class="ti ti-bulb" style="font-size:12px"></i>힌트 2</button>
+        <button class="mobile-hint-btn" id="mhb3" onclick="useHint(2)"><i class="ti ti-bulb" style="font-size:12px"></i>힌트 3</button>
       </div>
     </div>
     <div class="sidebar">
@@ -420,7 +444,7 @@ tr.me td{background:rgba(192,57,43,.04)}
    CONFIG — 여기만 수정하세요!
 ════════════════════════════════ */
 const ADMIN_PASSWORD = '1234';          // ← 관리자 비밀번호
-const GROQ_API_KEY = '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';   // ← Groq API 키 (gsk_...)
+const GROQ_API_KEY = 'YOUR_GROQ_KEY';   // ← Groq API 키 (gsk_...)
 /* ════════════════════════════════ */
 
 let PLAYER = '';
@@ -472,11 +496,30 @@ function nav(s) {
     document.getElementById('tn-admin').style.display = 'inline-flex';
     document.getElementById('tn-player').style.display = 'flex';
   }
+  // 이어하기 버튼 — 게임 진행 중인데 다른 화면일 때 표시
+  const resumeBar = document.getElementById('resume-bar');
+  if (curCase && !isSolved && timeLeft > 0 && s !== 'game') {
+    resumeBar.style.display = 'block';
+  } else {
+    resumeBar.style.display = 'none';
+  }
   if (s === 'select') renderCases();
   if (s === 'board') renderBoard();
   if (s === 'home') updateStats();
   if (s === 'admin') renderAdmin();
   if (timerInt && s !== 'game') { clearInterval(timerInt); timerInt = null; }
+}
+
+function resumeGame() {
+  if (!curCase) return;
+  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+  document.getElementById('game').classList.add('active');
+  document.getElementById('resume-bar').style.display = 'none';
+  // 타이머 재시작
+  if (!timerInt && !isSolved && timeLeft > 0) {
+    timerInt = setInterval(tick, 1000);
+  }
+  setTimeout(() => document.getElementById('q-inp').focus(), 100);
 }
 
 /* ── HOME ── */
@@ -555,6 +598,9 @@ function openCase(id) {
   document.getElementById('hb1').classList.remove('used');
   document.getElementById('hb2').classList.remove('used');
   document.getElementById('hb3').classList.remove('used');
+  document.getElementById('mhb1').classList.remove('used');
+  document.getElementById('mhb2').classList.remove('used');
+  document.getElementById('mhb3').classList.remove('used');
   document.getElementById('send-btn').disabled = false;
   document.getElementById('q-inp').disabled = false;
   document.getElementById('chat').innerHTML = '';
@@ -691,8 +737,10 @@ ${curCase.answer}
 function useHint(i) {
   if (hintsUsed>=3||isSolved||timeLeft<=0) return;
   const btn = document.getElementById('hb'+(i+1));
-  if (btn.classList.contains('used')) return;
-  btn.classList.add('used');
+  const mbtn = document.getElementById('mhb'+(i+1));
+  if (btn && btn.classList.contains('used')) return;
+  if (btn) btn.classList.add('used');
+  if (mbtn) mbtn.classList.add('used');
   hintsUsed++;
   document.getElementById('sb-hints').textContent = hintsUsed+' / 3';
   addMsg('ai', `<span class="vtag hint">[ 수사 힌트 ${i+1} ]</span><br>${curCase.hints[i]||'힌트가 없습니다.'}`);
