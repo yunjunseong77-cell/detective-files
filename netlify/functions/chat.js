@@ -54,6 +54,7 @@ ${answer}
         generationConfig: { maxOutputTokens: 300, temperature: 0.7 }
       }
     );
+    console.log('Gemini response:', JSON.stringify(data));
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '오류가 발생했습니다.';
 
     return {
