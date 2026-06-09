@@ -419,7 +419,7 @@ tr.me td{background:rgba(192,57,43,.04)}
    CONFIG — 여기만 수정하세요!
 ════════════════════════════════ */
 const ADMIN_PASSWORD = '1234';          // ← 관리자 비밀번호
-const API_KEY = 'AQ.Ab8RN6Lp0rNte0_ctMPW1dykk4eQMIsEMaL4ewTSODjjNMFH0g';   // ← Gemini API 키
+const API_KEY = 'AQ.Ab8RN6Lp0rNte0_ctMPW1dykk4eQMIsEMaL4ewTSODjjNMFH0g';;   // ← Gemini API 키
 const MODEL   = 'gemini-2.0-flash';          // ← Gemini 모델
 /* ════════════════════════════════ */
 
@@ -619,7 +619,7 @@ async function sendQ() {
   document.getElementById('send-btn').disabled = true;
   history.push({ role:'user', content:q });
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
