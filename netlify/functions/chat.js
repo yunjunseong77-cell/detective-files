@@ -1,22 +1,26 @@
 const https = require('https');
 
-function httpsPost(url, data) {
+function httpsPost(url, data, apiKey) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify(data);
     const urlObj = new URL(url);
     const options = {
       hostname: urlObj.hostname,
-      path: urlObj.pathname + urlObj.search,
+      path: urlObj.pathname,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Length': Buffer.byteLength(body)
       }
     };
     const req = https.request(options, (res) => {
       let data = '';
       res.on('data', (chunk) => data += chunk);
-      res.on('end', () => resolve(JSON.parse(data)));
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); }
+        catch(e) { reject(e); }
+      });
     });
     req.on('error', reject);
     req.write(body);
@@ -31,8 +35,7 @@ exports.handler = async (event) => {
 
   try {
     const { history, answer } = JSON.parse(event.body);
-    const API_KEY = process.env.GEMINI_API_KEY;
-    const MODEL = 'gemini-2.0-flash';
+    const API_KEY = process.env.OPENAI_API_KEY;
 
     const systemPrompt = `당신은 범죄 수사 퀴즈 게임의 냉철한 심문관입니다.
 
@@ -46,16 +49,28 @@ ${answer}
 4. 플레이어가 사건의 핵심 전말을 완전히 정확하게 설명했을 때만 "CASE CLOSED"를 포함하세요.
 5. 반드시 한국어로 답하세요.`;
 
-    const data = await httpsPost(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
-      {
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents: history,
-        generationConfig: { maxOutputTokens: 300, temperature: 0.7 }
+    // history를 OpenAI 형식으로 변환
+    const messages = [{ role: 'system', content: systemPrompt }];
+    for (const h of history) {
+      if (h.role === 'user') {
+        messages.push({ role: 'user', content: h.parts[0].text });
+      } else if (h.role === 'model') {
+        messages.push({ role: 'assistant', content: h.parts[0].text });
       }
+    }
+
+    const data = await httpsPost(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4o-mini',
+        messages: messages,
+        max_tokens: 300,
+        temperature: 0.7
+      },
+      API_KEY
     );
-    console.log('Gemini response:', JSON.stringify(data));
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '오류가 발생했습니다.';
+
+    const reply = data.choices?.[0]?.message?.content || '오류가 발생했습니다.';
 
     return {
       statusCode: 200,
