@@ -418,9 +418,9 @@ tr.me td{background:rgba(192,57,43,.04)}
 /* ════════════════════════════════
    CONFIG — 여기만 수정하세요!
 ════════════════════════════════ */
-const ADMIN_PASSWORD = '1234';          // ← 관리자 비밀번호
-const API_KEY = 'AQ.Ab8RN6Lp0rNte0_ctMPW1dykk4eQMIsEMaL4ewTSODjjNMFH0g';;   // ← Gemini API 키
-const MODEL   = 'gemini-2.0-flash';          // ← Gemini 모델
+const ADMIN_PASSWORD = '1234';           // ← 관리자 비밀번호
+const API_KEY = 'AQ.Ab8RN6ItzCV6wYAA4Agqhja0EpDW_4uaW-nn6-JEK65qF-HvHw';  // ← Gemini API 키
+const MODEL   = 'gemini-2.0-flash';      // ← 모델 (무료 티어 지원)
 /* ════════════════════════════════ */
 
 let PLAYER = '';
@@ -617,19 +617,9 @@ async function sendQ() {
   addMsg('user', q);
   showTyping();
   document.getElementById('send-btn').disabled = true;
-  history.push({ role:'user', content:q });
+  history.push({ role:'user', parts:[{ text:q }] });
   try {
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 300,
-        system: `당신은 범죄 수사 퀴즈 게임의 냉철한 심문관입니다.
+    const systemPrompt = `당신은 범죄 수사 퀴즈 게임의 냉철한 심문관입니다.
 
 [이 사건의 정답]
 ${curCase.answer}
@@ -639,13 +629,22 @@ ${curCase.answer}
 2. 정답을 직접 알려주지 마세요.
 3. 1~2문장으로 짧고 건조하게 답하세요.
 4. 플레이어가 사건의 핵심 전말을 완전히 정확하게 설명했을 때만 "CASE CLOSED"를 포함하세요.
-5. 반드시 한국어로 답하세요.`,
-        messages: history
-      })
-    });
+5. 반드시 한국어로 답하세요.`;
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: history,
+          generationConfig: { maxOutputTokens: 300, temperature: 0.7 }
+        })
+      }
+    );
     const data = await res.json();
-    const reply = data.content?.map(c => c.text||'').join('') || '오류가 발생했습니다.';
-    history.push({ role:'assistant', content:reply });
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '오류가 발생했습니다.';
+    history.push({ role:'model', parts:[{ text:reply }] });
     removeTyping();
     const isY = reply.includes('[예]') || reply.includes('[부분적으로]');
     const isN = reply.includes('[아니오]');
