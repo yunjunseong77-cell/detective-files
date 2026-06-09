@@ -617,7 +617,7 @@ async function sendQ() {
   document.getElementById('send-btn').disabled = true;
   history.push({ role:'user', parts:[{ text:q }] });
   try {
-    const res = await fetch('/api/chat', {
+    const res = await fetch('/.netlify/functions/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
