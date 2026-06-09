@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detective Files — 미스터리 수사 퀴즈</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#c0392b;--red2:#e74c3c;--gold:#d4a843;
+  --dim:#09090f;--surface:#0f0f18;--card:#141420;--card2:#1a1a28;
+  --border:#1e1e2e;--border2:#2a2a3e;
+  --text:#ede5d5;--text2:#b8b0a0;--muted:#6a6478;--muted2:#4a4458;
+  --success:#2ecc71;--info:#3498db;
+  --mono:'JetBrains Mono',monospace;--serif:'Crimson Text',serif
+}
+html,body{height:100%;background:var(--dim);color:var(--text);font-family:var(--mono)}
+body{display:flex;flex-direction:column;min-height:100vh}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100}
+.logo{font-family:var(--serif);font-size:20px;color:var(--red);font-style:italic;display:flex;align-items:center;gap:8px}
+.logo-dot{width:6px;height:6px;border-radius:50%;background:var(--red)}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.pill{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.pill span{color:var(--text2)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:7px;padding:9px 18px;font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;border:none}
+.btn-primary{background:var(--red);color:#fff}.btn-primary:hover{background:var(--red2)}
+.btn-primary:disabled{background:#2a1010;color:var(--muted);cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border2)}.btn-ghost:hover{border-color:var(--red);color:var(--red)}
+.btn-gold{background:transparent;color:var(--gold);border:1px solid rgba(212,168,67,.3)}.btn-gold:hover{background:rgba(212,168,67,.08)}
+.btn-success{background:transparent;color:var(--success);border:1px solid rgba(46,204,113,.3)}.btn-success:hover{background:rgba(46,204,113,.08)}
+.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(192,57,43,.3)}.btn-danger:hover{background:rgba(192,57,43,.08)}
+.btn-sm{padding:6px 12px;font-size:10px}
+
+/* SCREENS */
+.screen{display:none;flex:1;flex-direction:column}
+.screen.active{display:flex}
+
+/* ── HOME ── */
+#home{align-items:center;justify-content:center;padding:60px 24px;text-align:center}
+.home-badge{font-size:10px;letter-spacing:4px;color:var(--red);margin-bottom:20px}
+.home-title{font-family:var(--serif);font-size:clamp(48px,8vw,80px);color:var(--text);line-height:1;margin-bottom:8px}
+.home-title em{color:var(--red);font-style:normal}
+.home-sub{font-family:var(--serif);font-size:17px;color:var(--muted);font-style:italic;margin-bottom:44px;line-height:1.6}
+.home-form{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:380px}
+.name-input{width:100%;background:var(--card);border:1px solid var(--border2);border-radius:8px;padding:14px 18px;color:var(--text);font-family:var(--mono);font-size:14px;outline:none;text-align:center;transition:border-color .2s}
+.name-input:focus{border-color:var(--red)}
+.name-input::placeholder{color:var(--muted2)}
+.home-enter{width:100%;justify-content:center;padding:14px;font-size:12px;letter-spacing:2px}
+.divider{width:100%;max-width:380px;display:flex;align-items:center;gap:12px;margin:20px 0 8px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.divider span{font-size:10px;color:var(--muted);letter-spacing:2px}
+.home-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:380px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.stat-val{font-size:22px;font-weight:500;color:var(--text);display:block}
+.stat-lbl{font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:3px}
+
+/* ── SELECT ── */
+#select{padding:0}
+.page-header{padding:26px 28px 14px;border-bottom:1px solid var(--border)}
+.page-title{font-family:var(--serif);font-size:24px;font-style:italic;margin-bottom:3px}
+.page-sub{font-size:11px;color:var(--muted)}
+.filter-bar{display:flex;gap:8px;padding:12px 28px;border-bottom:1px solid var(--border);overflow-x:auto}
+.chip{background:transparent;border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:11px;color:var(--muted);cursor:pointer;font-family:var(--mono);white-space:nowrap;transition:all .15s}
+.chip:hover,.chip.on{border-color:var(--red);color:var(--red);background:rgba(192,57,43,.06)}
+.cases-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;padding:20px 28px;overflow-y:auto;flex:1}
+.case-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 20px;cursor:pointer;transition:border-color .2s,background .2s;position:relative}
+.case-card:hover{border-color:rgba(192,57,43,.5);background:var(--card2)}
+.case-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--red);border-radius:10px 10px 0 0;opacity:0;transition:opacity .2s}
+.case-card:hover::after{opacity:1}
+.case-card.solved::after{opacity:1;background:var(--success)}
+.c-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.c-num{font-size:9px;color:var(--red);letter-spacing:3px}
+.dbadge{font-size:9px;padding:3px 9px;border-radius:20px;letter-spacing:1px}
+.dbadge.easy{background:rgba(46,204,113,.1);color:#2ecc71;border:1px solid rgba(46,204,113,.2)}
+.dbadge.medium{background:rgba(212,168,67,.1);color:var(--gold);border:1px solid rgba(212,168,67,.2)}
+.dbadge.hard{background:rgba(192,57,43,.1);color:var(--red);border:1px solid rgba(192,57,43,.2)}
+.c-title{font-family:var(--serif);font-size:17px;font-style:italic;margin-bottom:6px;line-height:1.3}
+.c-preview{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px}
+.c-foot{display:flex;justify-content:space-between;align-items:center}
+.c-plays{font-size:10px;color:var(--muted2);display:flex;align-items:center;gap:4px}
+.solved-mark{font-size:10px;color:var(--success);display:flex;align-items:center;gap:3px}
+.new-mark{font-size:9px;padding:2px 7px;border-radius:4px;background:rgba(52,152,219,.12);color:#5ba8d4;border:1px solid rgba(52,152,219,.2);letter-spacing:1px}
+
+/* ── GAME ── */
+#game{flex:1;height:calc(100vh - 52px)}
+#game.active{display:flex;flex-direction:column}
+.game-header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;flex-shrink:0}
+.gh-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.gh-meta{display:flex;align-items:center;gap:10px}
+.gh-num{font-size:9px;color:var(--red);letter-spacing:3px}
+.gh-title{font-family:var(--serif);font-size:17px;font-style:italic}
+.timer-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.t-track{flex:1;height:3px;background:var(--border2);border-radius:2px;overflow:hidden}
+.t-fill{height:100%;background:var(--gold);border-radius:2px;transition:width 1s linear,background .5s}
+.t-label{font-size:13px;font-weight:500;min-width:40px;text-align:right;color:var(--gold)}
+.situation{font-family:var(--serif);font-size:15px;color:var(--text2);line-height:1.7;font-style:italic}
+.game-body{flex:1;display:flex;overflow:hidden;min-height:0}
+.chat-col{flex:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--border)}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.mrow{display:flex;gap:9px;align-items:flex-start}
+.mrow.user{flex-direction:row-reverse}
+.av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;font-weight:500}
+.av.ai{background:#160808;border:1px solid rgba(192,57,43,.4);color:var(--red)}
+.av.usr{background:#080e18;border:1px solid rgba(52,152,219,.3);color:#4a90d0}
+.bub{max-width:80%;padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.7}
+.bub.ai{background:var(--card);border:1px solid var(--border);color:var(--text2)}
+.bub.user{background:#0a1420;border:1px solid rgba(52,152,219,.15);color:#6a9ec0;text-align:right}
+.vtag{font-size:10px;letter-spacing:2px;font-weight:500;display:block;margin-bottom:4px}
+.vtag.yes{color:var(--success)}.vtag.no{color:var(--red)}.vtag.partial{color:var(--gold)}.vtag.hint{color:#9b59b6}
+.typing{display:flex;gap:3px;padding:3px 0}
+.dot{width:4px;height:4px;border-radius:50%;background:var(--red);animation:blink 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+.chat-in{border-top:1px solid var(--border);padding:12px 14px;display:flex;gap:8px;background:var(--surface);flex-shrink:0}
+.q-inp{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:7px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:border-color .2s}
+.q-inp:focus{border-color:var(--red)}
+.q-inp::placeholder{color:var(--muted2)}
+.sidebar{width:200px;flex-shrink:0;background:var(--surface);display:flex;flex-direction:column;overflow-y:auto}
+.sb-sec{padding:14px 14px 10px;border-bottom:1px solid var(--border)}
+.sb-lbl{font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:10px}
+.hbtn{width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--muted);font-family:var(--mono);font-size:10px;cursor:pointer;text-align:left;transition:all .2s;margin-bottom:6px;display:flex;align-items:center;gap:7px}
+.hbtn:hover:not(.used){border-color:#9b59b6;color:#9b59b6}
+.hbtn.used{opacity:.3;cursor:not-allowed}
+.srow{display:flex;justify-content:space-between;margin-bottom:8px;font-size:11px}
+.srow .l{color:var(--muted)}.srow .v{color:var(--text);font-weight:500}
+.qbig{font-size:32px;font-weight:500;text-align:center;display:block;margin:4px 0 2px}
+.qsub{font-size:9px;color:var(--muted);letter-spacing:2px;text-align:center}
+
+/* ── SOLVED ── */
+#solved{align-items:center;justify-content:center;padding:40px 24px;text-align:center;gap:18px}
+.sol-icon{font-size:48px;color:var(--success)}
+.sol-title{font-family:var(--serif);font-size:36px}
+.sol-case{font-size:12px;color:var(--muted);letter-spacing:1px}
+.res-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;width:100%;max-width:340px}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.ri{text-align:center}
+.rv{font-size:26px;font-weight:500;display:block}
+.rl{font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:3px}
+.final-block{border-top:1px solid var(--border);padding-top:14px}
+.final-num{font-size:44px;font-weight:500;color:var(--gold)}
+.final-lbl{font-size:9px;color:var(--muted);letter-spacing:3px}
+.rank-badge{display:inline-block;font-size:13px;padding:3px 14px;border-radius:20px;margin-top:8px;letter-spacing:2px}
+.rS{background:rgba(212,168,67,.15);color:var(--gold);border:1px solid rgba(212,168,67,.3)}
+.rA{background:rgba(46,204,113,.1);color:var(--success);border:1px solid rgba(46,204,113,.25)}
+.rB{background:rgba(52,152,219,.1);color:var(--info);border:1px solid rgba(52,152,219,.25)}
+.rC,.rD{background:rgba(106,100,120,.1);color:var(--muted);border:1px solid var(--border2)}
+.act-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+/* ── BOARD ── */
+#board{padding:0}
+.board-wrap{padding:20px 28px;overflow-y:auto;flex:1}
+table.bt{width:100%;border-collapse:collapse}
+.bt th{font-size:9px;letter-spacing:2px;color:var(--muted);text-align:left;padding:8px 12px;border-bottom:1px solid var(--border)}
+.bt td{padding:11px 12px;border-bottom:1px solid rgba(30,30,46,.5);font-size:12px}
+.r1{color:var(--gold)}.r2{color:#c0c0c0}.r3{color:#cd7f32}
+tr.me td{background:rgba(192,57,43,.04)}
+.empty-state{text-align:center;padding:60px;color:var(--muted);font-size:12px;line-height:2.2}
+
+/* ── ADMIN ── */
+#admin{padding:0}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;flex:1;overflow:hidden}
+.admin-left{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.admin-right{display:flex;flex-direction:column;overflow:hidden}
+.admin-sec-title{font-size:11px;letter-spacing:2px;color:var(--muted);padding:14px 18px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
+.scenario-list{flex:1;overflow-y:auto;padding:8px}
+.sc-item{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:12px 14px;margin-bottom:6px;display:flex;align-items:flex-start;gap:10px;transition:border-color .15s}
+.sc-item:hover{border-color:var(--border2)}
+.sc-item-info{flex:1;min-width:0}
+.sc-item-title{font-size:13px;color:var(--text);margin-bottom:3px;font-family:var(--serif);font-style:italic}
+.sc-item-meta{font-size:10px;color:var(--muted);display:flex;gap:10px}
+.sc-item-actions{display:flex;gap:5px;flex-shrink:0}
+.admin-form{flex:1;overflow-y:auto;padding:16px 18px}
+.form-row{margin-bottom:14px}
+.form-label{font-size:10px;letter-spacing:2px;color:var(--muted);display:block;margin-bottom:6px}
+.form-input,.form-textarea,.form-select{width:100%;background:var(--card);border:1px solid var(--border2);border-radius:7px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:border-color .2s;resize:vertical}
+.form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--red)}
+.form-textarea{min-height:80px;line-height:1.6}
+.form-select option{background:var(--card)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.admin-actions{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.status-dot.live{background:var(--success)}
+.status-dot.scheduled{background:var(--gold)}
+.admin-lock{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;padding:40px}
+.lock-title{font-family:var(--serif);font-size:22px;font-style:italic}
+.lock-sub{font-size:11px;color:var(--muted);text-align:center}
+.lock-form{display:flex;gap:8px;width:100%;max-width:300px}
+.lock-input{flex:1;background:var(--card);border:1px solid var(--border2);border-radius:7px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;text-align:center;transition:border-color .2s}
+.lock-input:focus{border-color:var(--red)}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .sidebar{display:none}
+  .admin-grid{grid-template-columns:1fr}
+  .admin-right{display:none}
+  .cases-grid{padding:14px 16px;grid-template-columns:1fr}
+  .topbar{padding:0 14px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><div class="logo-dot"></div>Detective Files</div>
+  <div class="topbar-right" id="top-right">
+    <button class="btn btn-gold btn-sm" onclick="nav('board')" style="display:none" id="tn-board"><i class="ti ti-trophy"></i>점수판</button>
+    <button class="btn btn-ghost btn-sm" onclick="nav('select')" style="display:none" id="tn-select"><i class="ti ti-layout-grid"></i>사건목록</button>
+    <button class="btn btn-ghost btn-sm" onclick="nav('admin')" style="display:none" id="tn-admin"><i class="ti ti-settings"></i>관리</button>
+    <div class="pill" id="tn-player" style="display:none"><i class="ti ti-user" style="font-size:12px"></i><span id="tn-name">-</span></div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="screen active" id="home">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:60px 24px;text-align:center">
+    <div class="home-badge">MYSTERY QUIZ GAME</div>
+    <div class="home-title">진실을<br>밝혀<em>라</em></div>
+    <div class="home-sub">예 / 아니오 질문만으로 사건을 해결하세요<br>빠를수록, 질문이 적을수록 높은 점수</div>
+    <div class="home-form">
+      <input class="name-input" id="name-inp" type="text" placeholder="수사관 코드명을 입력하세요" maxlength="14"/>
+      <button class="btn btn-primary home-enter" onclick="enterGame()">수사 시작 <i class="ti ti-arrow-right"></i></button>
+    </div>
+    <div class="divider"><span>현황</span></div>
+    <div class="home-stats">
+      <div class="stat-card"><span class="stat-val" id="hs-cases">0</span><div class="stat-lbl">사건 파일</div></div>
+      <div class="stat-card"><span class="stat-val" id="hs-plays">0</span><div class="stat-lbl">총 플레이</div></div>
+      <div class="stat-card"><span class="stat-val" id="hs-solved">0</span><div class="stat-lbl">해결된 사건</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SELECT -->
+<div class="screen" id="select">
+  <div class="page-header">
+    <div class="page-title">사건 파일</div>
+    <div class="page-sub" id="select-sub">해결할 사건을 선택하세요</div>
+  </div>
+  <div class="filter-bar">
+    <button class="chip on" onclick="setFilter(this,'all')">전체</button>
+    <button class="chip" onclick="setFilter(this,'easy')">입문</button>
+    <button class="chip" onclick="setFilter(this,'medium')">보통</button>
+    <button class="chip" onclick="setFilter(this,'hard')">어려움</button>
+    <button class="chip" onclick="setFilter(this,'unsolved')">미해결</button>
+    <button class="chip" onclick="setFilter(this,'new')">신규</button>
+  </div>
+  <div class="cases-grid" id="cases-grid"></div>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="game">
+  <div class="game-header">
+    <div class="gh-row">
+      <div class="gh-meta">
+        <span class="gh-num" id="g-num">CASE #001</span>
+        <span class="gh-title" id="g-title">-</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="nav('select')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="timer-row">
+      <div class="t-track"><div class="t-fill" id="t-fill"></div></div>
+      <div class="t-label" id="t-label">5:00</div>
+    </div>
+    <div class="situation" id="g-sit"></div>
+  </div>
+  <div class="game-body">
+    <div class="chat-col">
+      <div class="chat-msgs" id="chat"></div>
+      <div class="chat-in">
+        <input class="q-inp" id="q-inp" placeholder="예/아니오로 답할 수 있는 질문을 입력하세요..." maxlength="100"/>
+        <button class="btn btn-primary" id="send-btn" onclick="sendQ()" style="padding:10px 16px">전송 <i class="ti ti-send"></i></button>
+      </div>
+    </div>
+    <div class="sidebar">
+      <div class="sb-sec">
+        <div class="sb-lbl">힌트 사용</div>
+        <button class="hbtn" id="hb1" onclick="useHint(0)"><i class="ti ti-bulb" style="font-size:13px"></i>힌트 1 보기</button>
+        <button class="hbtn" id="hb2" onclick="useHint(1)"><i class="ti ti-bulb" style="font-size:13px"></i>힌트 2 보기</button>
+      </div>
+      <div class="sb-sec" style="border:none">
+        <div class="sb-lbl">현재 기록</div>
+        <span class="qbig" id="sb-q">0</span>
+        <div class="qsub">질문 횟수</div>
+        <div style="height:14px"></div>
+        <div class="srow"><span class="l">남은 시간</span><span class="v" id="sb-time">5:00</span></div>
+        <div class="srow"><span class="l">힌트</span><span class="v" id="sb-hints">0 / 2</span></div>
+        <div class="srow"><span class="l">예상 점수</span><span class="v" id="sb-score" style="color:var(--gold)">-</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SOLVED -->
+<div class="screen" id="solved">
+  <div class="sol-icon"><i class="ti ti-check-circle"></i></div>
+  <div class="sol-title">사건 해결</div>
+  <div class="sol-case" id="sol-case">-</div>
+  <div class="res-card">
+    <div class="res-grid">
+      <div class="ri"><span class="rv" id="sol-q">-</span><div class="rl">질문 횟수</div></div>
+      <div class="ri"><span class="rv" id="sol-t">-</span><div class="rl">소요 시간</div></div>
+      <div class="ri"><span class="rv" id="sol-h">-</span><div class="rl">힌트 사용</div></div>
+      <div class="ri"><span class="rv" id="sol-d">-</span><div class="rl">난이도</div></div>
+    </div>
+    <div class="final-block">
+      <div class="final-num" id="sol-score">0</div>
+      <div class="final-lbl">FINAL SCORE</div>
+      <div id="sol-rank"></div>
+    </div>
+  </div>
+  <div class="act-row">
+    <button class="btn btn-ghost" onclick="nav('select')"><i class="ti ti-layout-grid"></i>다른 사건</button>
+    <button class="btn btn-gold" onclick="nav('board')"><i class="ti ti-trophy"></i>점수판</button>
+    <button class="btn btn-primary" onclick="replayCase()"><i class="ti ti-refresh"></i>다시 도전</button>
+  </div>
+</div>
+
+<!-- BOARD -->
+<div class="screen" id="board">
+  <div class="page-header">
+    <div class="page-title">명예의 전당</div>
+    <div class="page-sub" id="board-sub">-</div>
+  </div>
+  <div class="board-wrap">
+    <table class="bt">
+      <thead><tr><th>순위</th><th>수사관</th><th>사건</th><th>점수</th><th>시간</th><th>질문</th><th>등급</th></tr></thead>
+      <tbody id="board-body"></tbody>
+    </table>
+    <div class="empty-state" id="board-empty" style="display:none">아직 기록이 없습니다<br><span style="font-size:11px;color:var(--muted2)">첫 번째 수사관이 되어보세요</span></div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="screen" id="admin">
+  <!-- 비밀번호 잠금 -->
+  <div id="admin-lock" class="admin-lock">
+    <div style="font-size:32px;color:var(--red)"><i class="ti ti-shield-lock"></i></div>
+    <div class="lock-title">관리자 페이지</div>
+    <div class="lock-sub">관리자 비밀번호를 입력하세요<br><span style="color:var(--muted2);font-size:10px">기본값: 1234 (index.html에서 변경 가능)</span></div>
+    <div class="lock-form">
+      <input class="lock-input" id="pw-inp" type="password" placeholder="비밀번호" maxlength="20"/>
+      <button class="btn btn-primary" onclick="checkPw()">확인</button>
+    </div>
+    <div id="pw-err" style="font-size:11px;color:var(--red);display:none">비밀번호가 틀렸습니다</div>
+  </div>
+  <!-- 실제 관리 패널 -->
+  <div id="admin-panel" style="display:none;flex:1;flex-direction:column;overflow:hidden">
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div class="page-title">시나리오 관리</div>
+        <div class="page-sub" id="admin-sub">-</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="newScenario()"><i class="ti ti-plus"></i>새 시나리오</button>
+    </div>
+    <div class="admin-grid" style="flex:1;overflow:hidden">
+      <div class="admin-left">
+        <div class="admin-sec-title">시나리오 목록 <span id="sc-count" style="color:var(--text)"></span></div>
+        <div class="scenario-list" id="sc-list"></div>
+      </div>
+      <div class="admin-right">
+        <div class="admin-sec-title" id="form-title">새 시나리오 작성</div>
+        <div class="admin-form">
+          <input type="hidden" id="edit-id"/>
+          <div class="form-row">
+            <label class="form-label">제목</label>
+            <input class="form-input" id="f-title" placeholder="사건 제목 (10자 이내)"/>
+          </div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">난이도</label>
+              <select class="form-select" id="f-diff">
+                <option value="easy">입문</option>
+                <option value="medium" selected>보통</option>
+                <option value="hard">어려움</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">공개 날짜</label>
+              <input class="form-input" id="f-date" type="date"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label">상황 설명 (결말 없이 — 플레이어에게 보여지는 내용)</label>
+            <textarea class="form-textarea" id="f-sit" placeholder="기묘한 상황을 입력하세요..."></textarea>
+          </div>
+          <div class="form-row">
+            <label class="form-label">정답 (전체 사건의 전말 — AI 심문관이 사용)</label>
+            <textarea class="form-textarea" id="f-ans" placeholder="사건의 완전한 진실을 입력하세요..."></textarea>
+          </div>
+          <div class="form-row">
+            <label class="form-label">힌트 1</label>
+            <input class="form-input" id="f-h1" placeholder="첫 번째 힌트 (직접적이지 않게)"/>
+          </div>
+          <div class="form-row">
+            <label class="form-label">힌트 2</label>
+            <input class="form-input" id="f-h2" placeholder="두 번째 힌트 (좀 더 구체적으로)"/>
+          </div>
+        </div>
+        <div class="admin-actions">
+          <button class="btn btn-primary" onclick="saveScenario()"><i class="ti ti-device-floppy"></i>저장</button>
+          <button class="btn btn-ghost" onclick="newScenario()"><i class="ti ti-x"></i>취소</button>
+          <button class="btn btn-danger btn-sm" id="del-btn" onclick="deleteScenario()" style="display:none;margin-left:auto"><i class="ti ti-trash"></i>삭제</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="scenarios.js"></script>
+<script>
+/* ════════════════════════════════
+   CONFIG — 여기만 수정하세요!
+════════════════════════════════ */
+const ADMIN_PASSWORD = '1234';          // ← 관리자 비밀번호
+const API_KEY = 'YOUR_API_KEY_HERE';    // ← Anthropic API 키
+const MODEL   = 'claude-haiku-4-5-20251001'; // ← 모델 (haiku=저렴, sonnet=고품질)
+/* ════════════════════════════════ */
+
+let PLAYER = '';
+let cases = [];
+let scores = [];
+let curCase = null, qCount = 0, hintsUsed = 0, isSolved = false;
+let timeLeft = 300, totalTime = 300, timerInt = null;
+let history = [];
+let curFilter = 'all';
+let lastCaseId = null;
+const DL = { easy:'입문', medium:'보통', hard:'어려움' };
+
+/* ── STORAGE ── */
+function load() {
+  try {
+    const sc = localStorage.getItem('df_cases');
+    cases = sc ? JSON.parse(sc) : INITIAL_SCENARIOS.map(s => ({...s}));
+    const ss = localStorage.getItem('df_scores');
+    scores = ss ? JSON.parse(ss) : [];
+  } catch(e) {
+    cases = INITIAL_SCENARIOS.map(s => ({...s}));
+    scores = [];
+  }
+}
+function save() {
+  try {
+    localStorage.setItem('df_cases', JSON.stringify(cases));
+    localStorage.setItem('df_scores', JSON.stringify(scores));
+  } catch(e) {}
+}
+
+/* ── VISIBLE CASES (공개 날짜 체크) ── */
+function visibleCases() {
+  const today = new Date().toISOString().split('T')[0];
+  return cases.filter(c => !c.releaseDate || c.releaseDate <= today);
+}
+
+/* ── NAV ── */
+function nav(s) {
+  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+  document.getElementById(s).classList.add('active');
+  const logged = !!PLAYER;
+  ['tn-board','tn-select','tn-admin','tn-player'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  if (logged) {
+    document.getElementById('tn-board').style.display = s !== 'board' ? 'inline-flex' : 'none';
+    document.getElementById('tn-select').style.display = s !== 'select' ? 'inline-flex' : 'none';
+    document.getElementById('tn-admin').style.display = 'inline-flex';
+    document.getElementById('tn-player').style.display = 'flex';
+  }
+  if (s === 'select') renderCases();
+  if (s === 'board') renderBoard();
+  if (s === 'home') updateStats();
+  if (s === 'admin') renderAdmin();
+  if (timerInt && s !== 'game') { clearInterval(timerInt); timerInt = null; }
+}
+
+/* ── HOME ── */
+function updateStats() {
+  const vis = visibleCases();
+  document.getElementById('hs-cases').textContent = vis.length;
+  document.getElementById('hs-plays').textContent = scores.length;
+  const myS = new Set(scores.filter(s => s.player === PLAYER).map(s => s.caseId));
+  document.getElementById('hs-solved').textContent = myS.size;
+}
+function enterGame() {
+  const n = document.getElementById('name-inp').value.trim();
+  if (!n) { document.getElementById('name-inp').focus(); return; }
+  PLAYER = n;
+  document.getElementById('tn-name').textContent = n;
+  nav('select');
+}
+
+/* ── SELECT ── */
+function solvedIds() {
+  return new Set(scores.filter(s => s.player === PLAYER).map(s => s.caseId));
+}
+function setFilter(el, f) {
+  curFilter = f;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  renderCases();
+}
+function renderCases() {
+  const grid = document.getElementById('cases-grid');
+  const solved = solvedIds();
+  const today = new Date().toISOString().split('T')[0];
+  const sevenAgo = new Date(Date.now() - 7 * 864e5).toISOString().split('T')[0];
+  let list = visibleCases();
+  if (curFilter === 'easy') list = list.filter(c => c.diff === 'easy');
+  else if (curFilter === 'medium') list = list.filter(c => c.diff === 'medium');
+  else if (curFilter === 'hard') list = list.filter(c => c.diff === 'hard');
+  else if (curFilter === 'unsolved') list = list.filter(c => !solved.has(c.id));
+  else if (curFilter === 'new') list = list.filter(c => c.createdAt >= sevenAgo);
+  document.getElementById('select-sub').textContent = `${list.length}개의 사건 파일`;
+  if (!list.length) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--muted);font-size:12px">해당 조건의 사건이 없습니다</div>'; return; }
+  const isNew = c => c.createdAt && c.createdAt >= sevenAgo;
+  grid.innerHTML = list.map(c => `
+    <div class="case-card${solved.has(c.id)?' solved':''}" onclick="openCase(${c.id})">
+      <div class="c-top">
+        <span class="c-num">사건 #${String(c.id).padStart(3,'0')}</span>
+        <span class="dbadge ${c.diff}">${DL[c.diff]}</span>
+      </div>
+      <div class="c-title">${c.title}</div>
+      <div class="c-preview">${c.situation.substring(0,68)}...</div>
+      <div class="c-foot">
+        <span class="c-plays"><i class="ti ti-eye" style="font-size:11px"></i>${c.plays||0}회</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${isNew(c) ? '<span class="new-mark">NEW</span>' : ''}
+          ${solved.has(c.id) ? '<span class="solved-mark"><i class="ti ti-check" style="font-size:11px"></i>해결</span>' : ''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+/* ── GAME ── */
+function openCase(id) {
+  curCase = cases.find(c => c.id === id);
+  if (!curCase) return;
+  lastCaseId = id;
+  curCase.plays = (curCase.plays || 0) + 1;
+  save();
+  qCount = 0; hintsUsed = 0; isSolved = false; history = [];
+  timeLeft = 300; totalTime = 300;
+  document.getElementById('g-num').textContent = '사건 #' + String(curCase.id).padStart(3,'0');
+  document.getElementById('g-title').textContent = curCase.title;
+  document.getElementById('g-sit').textContent = curCase.situation;
+  document.getElementById('sb-q').textContent = '0';
+  document.getElementById('sb-hints').textContent = '0 / 2';
+  document.getElementById('sb-score').textContent = '-';
+  document.getElementById('hb1').classList.remove('used');
+  document.getElementById('hb2').classList.remove('used');
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('q-inp').disabled = false;
+  document.getElementById('chat').innerHTML = '';
+  addMsg('ai', '<i class="ti ti-file-search" style="margin-right:6px;font-size:13px"></i>사건 파일이 열렸습니다. 예 / 아니오로 답할 수 있는 질문으로 진실을 밝혀내세요.');
+  updateTimer();
+  clearInterval(timerInt);
+  timerInt = setInterval(tick, 1000);
+  nav('game');
+  setTimeout(() => document.getElementById('q-inp').focus(), 100);
+}
+function tick() {
+  if (isSolved) { clearInterval(timerInt); return; }
+  timeLeft = Math.max(0, timeLeft - 1);
+  updateTimer(); updateScorePreview();
+  if (timeLeft <= 0) {
+    clearInterval(timerInt);
+    document.getElementById('send-btn').disabled = true;
+    document.getElementById('q-inp').disabled = true;
+    addMsg('ai', '<span class="vtag no">[ 시간 초과 ]</span>제한 시간이 종료되었습니다. 사건은 미제로 남겨집니다.');
+  }
+}
+function updateTimer() {
+  const m = Math.floor(timeLeft/60), s = timeLeft%60;
+  const txt = m+':'+(s<10?'0':'')+s;
+  document.getElementById('t-label').textContent = txt;
+  document.getElementById('sb-time').textContent = txt;
+  const pct = (timeLeft/totalTime)*100;
+  const fill = document.getElementById('t-fill');
+  fill.style.width = pct+'%';
+  const col = timeLeft>120?'var(--gold)':timeLeft>60?'#e67e22':'var(--red)';
+  fill.style.background = col;
+  document.getElementById('t-label').style.color = col;
+}
+function updateScorePreview() {
+  if (!curCase) return;
+  document.getElementById('sb-score').textContent = calcScore(qCount, totalTime-timeLeft, hintsUsed, curCase.diff).toLocaleString();
+}
+function addMsg(role, html) {
+  const c = document.getElementById('chat');
+  const d = document.createElement('div');
+  d.className = 'mrow' + (role==='user'?' user':'');
+  d.innerHTML = `<div class="av ${role==='user'?'usr':'ai'}">${role==='user'?PLAYER.substring(0,3).toUpperCase():'AI'}</div><div class="bub ${role==='user'?'user':'ai'}">${html}</div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+function showTyping() {
+  const c = document.getElementById('chat');
+  const d = document.createElement('div');
+  d.id = 'typing'; d.className = 'mrow';
+  d.innerHTML = '<div class="av ai">AI</div><div class="bub ai"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+function removeTyping() { const t=document.getElementById('typing'); if(t) t.remove(); }
+
+async function sendQ() {
+  const inp = document.getElementById('q-inp');
+  const q = inp.value.trim();
+  if (!q || isSolved || timeLeft <= 0) return;
+  inp.value = '';
+  qCount++;
+  document.getElementById('sb-q').textContent = qCount;
+  addMsg('user', q);
+  showTyping();
+  document.getElementById('send-btn').disabled = true;
+  history.push({ role:'user', content:q });
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 300,
+        system: `당신은 범죄 수사 퀴즈 게임의 냉철한 심문관입니다.
+
+[이 사건의 정답]
+${curCase.answer}
+
+[규칙]
+1. 반드시 [예] 또는 [아니오] 로만 시작하세요. 필요시 [부분적으로] 가능.
+2. 정답을 직접 알려주지 마세요.
+3. 1~2문장으로 짧고 건조하게 답하세요.
+4. 플레이어가 사건의 핵심 전말을 완전히 정확하게 설명했을 때만 "CASE CLOSED"를 포함하세요.
+5. 반드시 한국어로 답하세요.`,
+        messages: history
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.map(c => c.text||'').join('') || '오류가 발생했습니다.';
+    history.push({ role:'assistant', content:reply });
+    removeTyping();
+    const isY = reply.includes('[예]') || reply.includes('[부분적으로]');
+    const isN = reply.includes('[아니오]');
+    const tag = isY ? `<span class="vtag ${reply.includes('[부분적으로]')?'partial':'yes'}">${reply.includes('[부분적으로]')?'[ 부분적으로 ]':'[ 예 ]'}</span>`
+                   : isN ? '<span class="vtag no">[ 아니오 ]</span>' : '';
+    const clean = reply.replace('[예]','').replace('[아니오]','').replace('[부분적으로]','').trim();
+    addMsg('ai', tag+(tag?'<br>':'')+clean);
+    updateScorePreview();
+    if (reply.includes('CASE CLOSED')) {
+      isSolved = true;
+      clearInterval(timerInt);
+      const elapsed = totalTime - timeLeft;
+      const score = calcScore(qCount, elapsed, hintsUsed, curCase.diff);
+      curCase.solves = (curCase.solves||0) + 1;
+      scores.push({ player:PLAYER, caseId:curCase.id, caseTitle:curCase.title, score, qCount, elapsed, hintsUsed, diff:curCase.diff, ts:Date.now() });
+      scores.sort((a,b) => b.score - a.score);
+      if (scores.length > 300) scores = scores.slice(0,300);
+      save();
+      setTimeout(() => showSolved(score, qCount, elapsed, hintsUsed), 900);
+    }
+  } catch(e) {
+    removeTyping();
+    addMsg('ai', 'API 오류가 발생했습니다. API 키를 확인해주세요.');
+  }
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('q-inp').focus();
+}
+function useHint(i) {
+  if (hintsUsed>=2||isSolved||timeLeft<=0) return;
+  const btn = document.getElementById('hb'+(i+1));
+  if (btn.classList.contains('used')) return;
+  btn.classList.add('used');
+  hintsUsed++;
+  document.getElementById('sb-hints').textContent = hintsUsed+' / 2';
+  addMsg('ai', `<span class="vtag hint">[ 수사 힌트 ${i+1} ]</span><br>${curCase.hints[i]}`);
+  updateScorePreview();
+}
+function calcScore(q, elapsed, hints, diff) {
+  const base = {easy:800,medium:1400,hard:2200}[diff]||1000;
+  return Math.max(0, base - q*25 - Math.floor(elapsed/12)*5 - hints*180);
+}
+function getRank(s) { return s>=1500?'S':s>=1000?'A':s>=600?'B':s>=300?'C':'D'; }
+function showSolved(score, q, elapsed, hints) {
+  const m=Math.floor(elapsed/60), s=elapsed%60;
+  const rank=getRank(score);
+  document.getElementById('sol-case').textContent = curCase.title;
+  document.getElementById('sol-q').textContent = q;
+  document.getElementById('sol-t').textContent = m+':'+(s<10?'0':'')+s;
+  document.getElementById('sol-h').textContent = hints;
+  document.getElementById('sol-d').textContent = DL[curCase.diff];
+  document.getElementById('sol-score').textContent = score.toLocaleString();
+  document.getElementById('sol-rank').innerHTML = `<span class="rank-badge r${rank}">${rank} 등급</span>`;
+  nav('solved');
+}
+function replayCase() { if (lastCaseId) openCase(lastCaseId); }
+
+/* ── BOARD ── */
+function renderBoard() {
+  const body = document.getElementById('board-body');
+  const empty = document.getElementById('board-empty');
+  document.getElementById('board-sub').textContent = `총 ${scores.length}개의 기록`;
+  if (!scores.length) { body.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  const rc={S:'var(--gold)',A:'var(--success)',B:'var(--info)',C:'var(--muted)',D:'var(--muted)'};
+  body.innerHTML = scores.map((s,i) => {
+    const m=Math.floor(s.elapsed/60), sec=s.elapsed%60;
+    const rank=getRank(s.score);
+    const rc2=i===0?'r1':i===1?'r2':i===2?'r3':'';
+    const me=s.player===PLAYER;
+    return `<tr class="${me?'me':''}">
+      <td class="${rc2}" style="font-weight:500">${i+1}</td>
+      <td style="color:var(--text);font-weight:500">${s.player}${me?' <span style="color:var(--red);font-size:10px">★</span>':''}</td>
+      <td style="color:var(--muted);font-size:11px">${s.caseTitle}</td>
+      <td style="color:var(--gold);font-weight:500">${s.score.toLocaleString()}</td>
+      <td style="color:var(--muted2)">${m}:${sec<10?'0':''}${sec}</td>
+      <td style="color:var(--muted2);font-size:11px">${s.qCount}</td>
+      <td style="color:${rc[rank]};font-size:11px;letter-spacing:1px">${rank}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── ADMIN AUTH ── */
+function checkPw() {
+  const v = document.getElementById('pw-inp').value;
+  if (v === ADMIN_PASSWORD) {
+    document.getElementById('admin-lock').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'flex';
+    renderAdmin();
+  } else {
+    document.getElementById('pw-err').style.display = 'block';
+    document.getElementById('pw-inp').value = '';
+  }
+}
+
+/* ── ADMIN CRUD ── */
+function renderAdmin() {
+  const today = new Date().toISOString().split('T')[0];
+  const list = [...cases].sort((a,b) => b.id - a.id);
+  document.getElementById('sc-count').textContent = `(${cases.length}개)`;
+  document.getElementById('admin-sub').textContent = `전체 ${cases.length}개 · 공개 ${visibleCases().length}개`;
+  document.getElementById('sc-list').innerHTML = list.map(c => {
+    const live = !c.releaseDate || c.releaseDate <= today;
+    return `<div class="sc-item">
+      <div class="status-dot ${live?'live':'scheduled'}" title="${live?'공개중':'예약됨'}"></div>
+      <div class="sc-item-info">
+        <div class="sc-item-title">${c.title}</div>
+        <div class="sc-item-meta">
+          <span style="color:${c.diff==='easy'?'var(--success)':c.diff==='medium'?'var(--gold)':'var(--red)'}">${DL[c.diff]}</span>
+          <span>${live ? '공개중' : '📅 '+c.releaseDate}</span>
+          <span>플레이 ${c.plays||0}</span>
+        </div>
+      </div>
+      <div class="sc-item-actions">
+        <button class="btn btn-ghost btn-sm" onclick="editScenario(${c.id})"><i class="ti ti-edit"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function newScenario() {
+  document.getElementById('form-title').textContent = '새 시나리오 작성';
+  document.getElementById('edit-id').value = '';
+  document.getElementById('f-title').value = '';
+  document.getElementById('f-diff').value = 'medium';
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f-sit').value = '';
+  document.getElementById('f-ans').value = '';
+  document.getElementById('f-h1').value = '';
+  document.getElementById('f-h2').value = '';
+  document.getElementById('del-btn').style.display = 'none';
+}
+
+function editScenario(id) {
+  const c = cases.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('form-title').textContent = '시나리오 편집';
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-title').value = c.title;
+  document.getElementById('f-diff').value = c.diff;
+  document.getElementById('f-date').value = c.releaseDate || new Date().toISOString().split('T')[0];
+  document.getElementById('f-sit').value = c.situation;
+  document.getElementById('f-ans').value = c.answer;
+  document.getElementById('f-h1').value = c.hints[0] || '';
+  document.getElementById('f-h2').value = c.hints[1] || '';
+  document.getElementById('del-btn').style.display = 'inline-flex';
+}
+
+function saveScenario() {
+  const title = document.getElementById('f-title').value.trim();
+  const sit   = document.getElementById('f-sit').value.trim();
+  const ans   = document.getElementById('f-ans').value.trim();
+  if (!title || !sit || !ans) { alert('제목, 상황 설명, 정답은 필수입니다.'); return; }
+  const editId = document.getElementById('edit-id').value;
+  const today = new Date().toISOString().split('T')[0];
+  if (editId) {
+    const idx = cases.findIndex(c => c.id == editId);
+    if (idx !== -1) {
+      cases[idx] = { ...cases[idx],
+        title, diff: document.getElementById('f-diff').value,
+        releaseDate: document.getElementById('f-date').value,
+        situation: sit, answer: ans,
+        hints: [document.getElementById('f-h1').value.trim(), document.getElementById('f-h2').value.trim()]
+      };
+    }
+  } else {
+    const maxId = Math.max(0, ...cases.map(c => c.id));
+    cases.push({
+      id: maxId+1, title,
+      diff: document.getElementById('f-diff').value,
+      releaseDate: document.getElementById('f-date').value,
+      createdAt: today,
+      plays:0, solves:0,
+      situation: sit, answer: ans,
+      hints: [document.getElementById('f-h1').value.trim(), document.getElementById('f-h2').value.trim()]
+    });
+  }
+  save();
+  renderAdmin();
+  newScenario();
+}
+
+function deleteScenario() {
+  const editId = document.getElementById('edit-id').value;
+  if (!editId) return;
+  if (!confirm('정말 이 시나리오를 삭제하시겠어요?')) return;
+  cases = cases.filter(c => c.id != editId);
+  save();
+  renderAdmin();
+  newScenario();
+}
+
+/* ── INIT ── */
+document.getElementById('name-inp').addEventListener('keydown', e => { if(e.key==='Enter') enterGame(); });
+document.getElementById('q-inp').addEventListener('keydown', e => { if(e.key==='Enter') sendQ(); });
+document.getElementById('pw-inp').addEventListener('keydown', e => { if(e.key==='Enter') checkPw(); });
+load();
+updateStats();
+</script>
+</body>
+</html>
