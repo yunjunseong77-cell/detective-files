@@ -460,8 +460,13 @@ const DL = { easy:'입문', medium:'보통', hard:'어려움' };
 /* ── STORAGE ── */
 function load() {
   try {
-    const sc = localStorage.getItem('df_cases');
-    cases = sc ? JSON.parse(sc) : INITIAL_SCENARIOS.map(s => ({...s}));
+    // 시나리오는 항상 최신 파일에서 로드 (캐시 무시)
+    cases = INITIAL_SCENARIOS.map(s => {
+      const saved = JSON.parse(localStorage.getItem('df_cases') || '[]');
+      const prev = saved.find(c => c.id === s.id);
+      // plays/solves 수치만 유지, 나머지는 최신 파일 기준
+      return { ...s, plays: prev?.plays || 0, solves: prev?.solves || 0 };
+    });
     const ss = localStorage.getItem('df_scores');
     scores = ss ? JSON.parse(ss) : [];
   } catch(e) {
