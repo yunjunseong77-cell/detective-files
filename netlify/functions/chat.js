@@ -49,7 +49,6 @@ ${answer}
 4. 플레이어가 사건의 핵심 전말을 완전히 정확하게 설명했을 때만 "CASE CLOSED"를 포함하세요.
 5. 반드시 한국어로 답하세요.`;
 
-    // history를 OpenAI 형식으로 변환
     const messages = [{ role: 'system', content: systemPrompt }];
     for (const h of history) {
       if (h.role === 'user') {
@@ -60,16 +59,16 @@ ${answer}
     }
 
     const data = await httpsPost(
-      'https://api.openai.com/v1/chat/completions',
+      'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'gpt-4o-mini',
+        model: 'llama-3.1-8b-instant',
         messages: messages,
         max_tokens: 300,
         temperature: 0.7
       },
       API_KEY
     );
-console.log('OpenAI response:', JSON.stringify(data));
+
     const reply = data.choices?.[0]?.message?.content || '오류가 발생했습니다.';
 
     return {
