@@ -69,7 +69,7 @@ ${answer}
       },
       API_KEY
     );
-
+console.log('OpenAI response:', JSON.stringify(data));
     const reply = data.choices?.[0]?.message?.content || '오류가 발생했습니다.';
 
     return {
