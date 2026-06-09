@@ -61,7 +61,7 @@ ${answer}
     const data = await httpsPost(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama-3.1-8b-instant',
+        model: 'llama-3.3-70b-versatile',
         messages: messages,
         max_tokens: 300,
         temperature: 0.7
