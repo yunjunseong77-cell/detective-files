@@ -283,14 +283,15 @@ tr.me td{background:rgba(192,57,43,.04)}
         <div class="sb-lbl">힌트 사용</div>
         <button class="hbtn" id="hb1" onclick="useHint(0)"><i class="ti ti-bulb" style="font-size:13px"></i>힌트 1 보기</button>
         <button class="hbtn" id="hb2" onclick="useHint(1)"><i class="ti ti-bulb" style="font-size:13px"></i>힌트 2 보기</button>
+        <button class="hbtn" id="hb3" onclick="useHint(2)"><i class="ti ti-bulb" style="font-size:13px"></i>힌트 3 보기</button>
       </div>
       <div class="sb-sec" style="border:none">
         <div class="sb-lbl">현재 기록</div>
         <span class="qbig" id="sb-q">0</span>
-        <div class="qsub">질문 횟수</div>
+        <div class="qsub">질문 횟수 / 50</div>
         <div style="height:14px"></div>
-        <div class="srow"><span class="l">남은 시간</span><span class="v" id="sb-time">5:00</span></div>
-        <div class="srow"><span class="l">힌트</span><span class="v" id="sb-hints">0 / 2</span></div>
+        <div class="srow"><span class="l">남은 시간</span><span class="v" id="sb-time">30:00</span></div>
+        <div class="srow"><span class="l">힌트</span><span class="v" id="sb-hints">0 / 3</span></div>
         <div class="srow"><span class="l">예상 점수</span><span class="v" id="sb-score" style="color:var(--gold)">-</span></div>
       </div>
     </div>
@@ -418,14 +419,15 @@ tr.me td{background:rgba(192,57,43,.04)}
 /* ════════════════════════════════
    CONFIG — 여기만 수정하세요!
 ════════════════════════════════ */
-const ADMIN_PASSWORD = '1234';  // ← 관리자 비밀번호 (변경 가능)
+const ADMIN_PASSWORD = '1234';          // ← 관리자 비밀번호
+const GROQ_API_KEY = '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';   // ← Groq API 키 (gsk_...)
 /* ════════════════════════════════ */
 
 let PLAYER = '';
 let cases = [];
 let scores = [];
 let curCase = null, qCount = 0, hintsUsed = 0, isSolved = false;
-let timeLeft = 300, totalTime = 300, timerInt = null;
+let timeLeft = 1800, totalTime = 1800, timerInt = null;
 let history = [];
 let curFilter = 'all';
 let lastCaseId = null;
@@ -543,15 +545,16 @@ function openCase(id) {
   curCase.plays = (curCase.plays || 0) + 1;
   save();
   qCount = 0; hintsUsed = 0; isSolved = false; history = [];
-  timeLeft = 300; totalTime = 300;
+  timeLeft = 1800; totalTime = 1800;
   document.getElementById('g-num').textContent = '사건 #' + String(curCase.id).padStart(3,'0');
   document.getElementById('g-title').textContent = curCase.title;
   document.getElementById('g-sit').textContent = curCase.situation;
   document.getElementById('sb-q').textContent = '0';
-  document.getElementById('sb-hints').textContent = '0 / 2';
+  document.getElementById('sb-hints').textContent = '0 / 3';
   document.getElementById('sb-score').textContent = '-';
   document.getElementById('hb1').classList.remove('used');
   document.getElementById('hb2').classList.remove('used');
+  document.getElementById('hb3').classList.remove('used');
   document.getElementById('send-btn').disabled = false;
   document.getElementById('q-inp').disabled = false;
   document.getElementById('chat').innerHTML = '';
@@ -609,6 +612,12 @@ async function sendQ() {
   const inp = document.getElementById('q-inp');
   const q = inp.value.trim();
   if (!q || isSolved || timeLeft <= 0) return;
+  if (qCount >= 50) {
+    addMsg('ai', '질문 횟수(50회)를 초과했습니다. 사건은 미제로 남겨집니다.');
+    document.getElementById('send-btn').disabled = true;
+    document.getElementById('q-inp').disabled = true;
+    return;
+  }
   inp.value = '';
   qCount++;
   document.getElementById('sb-q').textContent = qCount;
@@ -617,22 +626,46 @@ async function sendQ() {
   document.getElementById('send-btn').disabled = true;
   history.push({ role:'user', parts:[{ text:q }] });
   try {
-    const res = await fetch('/.netlify/functions/chat', {
+    const systemPrompt = `당신은 범죄 수사 퀴즈 게임의 심문관입니다.
+
+[이 사건의 정답]
+${curCase.answer}
+
+[절대 규칙]
+1. 오직 "예", "아니오", "애매합니다" 중 하나만 답하세요. 단 한 단어만!
+2. 부가 설명 절대 금지.
+3. 플레이어가 사건의 핵심 전말을 완전히 정확하게 설명했을 때만 "CASE CLOSED" 라고만 답하세요.
+4. 한국어로만 답하세요.`;
+
+    const messages = [{ role: 'system', content: systemPrompt }];
+    for (const h of history) {
+      if (h.role === 'user') messages.push({ role:'user', content: h.parts[0].text });
+      else if (h.role === 'model') messages.push({ role:'assistant', content: h.parts[0].text });
+    }
+
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`
+      },
       body: JSON.stringify({
-        history: history,
-        answer: curCase.answer
+        model: 'llama-3.3-70b-versatile',
+        messages: messages,
+        max_tokens: 10,
+        temperature: 0.3
       })
     });
     const data = await res.json();
-    const reply = data.reply || '오류가 발생했습니다.';
+    const reply = data.choices?.[0]?.message?.content || '오류가 발생했습니다.';
     history.push({ role:'model', parts:[{ text:reply }] });
     removeTyping();
-    const isY = reply.includes('[예]') || reply.includes('[부분적으로]');
-    const isN = reply.includes('[아니오]');
-    const tag = isY ? `<span class="vtag ${reply.includes('[부분적으로]')?'partial':'yes'}">${reply.includes('[부분적으로]')?'[ 부분적으로 ]':'[ 예 ]'}</span>`
-                   : isN ? '<span class="vtag no">[ 아니오 ]</span>' : '';
+    const isY = reply === '예' || reply.includes('예');
+    const isN = reply === '아니오' || reply.includes('아니오');
+    const isA = reply.includes('애매');
+    const tag = isY ? '<span class="vtag yes">[ 예 ]</span>'
+                   : isN ? '<span class="vtag no">[ 아니오 ]</span>'
+                   : isA ? '<span class="vtag partial">[ 애매 ]</span>' : '';
     const clean = reply.replace('[예]','').replace('[아니오]','').replace('[부분적으로]','').trim();
     addMsg('ai', tag+(tag?'<br>':'')+clean);
     updateScorePreview();
@@ -656,13 +689,13 @@ async function sendQ() {
   document.getElementById('q-inp').focus();
 }
 function useHint(i) {
-  if (hintsUsed>=2||isSolved||timeLeft<=0) return;
+  if (hintsUsed>=3||isSolved||timeLeft<=0) return;
   const btn = document.getElementById('hb'+(i+1));
   if (btn.classList.contains('used')) return;
   btn.classList.add('used');
   hintsUsed++;
-  document.getElementById('sb-hints').textContent = hintsUsed+' / 2';
-  addMsg('ai', `<span class="vtag hint">[ 수사 힌트 ${i+1} ]</span><br>${curCase.hints[i]}`);
+  document.getElementById('sb-hints').textContent = hintsUsed+' / 3';
+  addMsg('ai', `<span class="vtag hint">[ 수사 힌트 ${i+1} ]</span><br>${curCase.hints[i]||'힌트가 없습니다.'}`);
   updateScorePreview();
 }
 function calcScore(q, elapsed, hints, diff) {
